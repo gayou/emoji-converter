@@ -23,7 +23,7 @@ class EmojiConverter
     
     function __construct()
     {
-        //変換表ロード
+        // 変換表ロード
         $filename = dirname(__FILE__)."/data/emoji4unicode4docomo.xml";
         $this->mapping = simplexml_load_file($filename);
     }
@@ -33,33 +33,33 @@ class EmojiConverter
      * 携帯絵文字をデバイスに最適な文字に変換
      * 
      * @param string $str 変換対象の文字列
-     * @param string $chartset 文字コード
+     * @param string $userAgent ユーザーエージェント
      * @
      */
     public function convert($str, $mode = self::MODE_BINARY, $userAgent = null): string
     {
-        //デバイス検出
+        // デバイス検出
         $device = $this->detectDevice($userAgent);
         
-        //ドコモ、携帯以外の場合は変換しない
+        //ドコモの場合は変換しない
         if ($device === self::DOCOMO) {
             return $str;
         }
 
-        //i絵文字抽出
+        // i絵文字抽出
         mb_substitute_character("long");
         $str = mb_convert_encoding($str, "SJIS", 'UTF-8');
-        $pattern = $mode === self::MODE_BINARY ? "/U\+([A-F0-9]{4})/": "/&#x([A-F0-9]{4});/";
+        $pattern = ($mode === self::MODE_BINARY)? "/U\+([A-F0-9]{4})/": "/&#x([A-F0-9]{4});/";
         preg_match_all($pattern, $str, $matches);
                 
-        //キャリア絵文字変換
+        // キャリア絵文字変換
         $mapping = $this->mapping; 
         foreach ($matches[1] as $emoji) {
             $xpath_query = '//e[@docomo="'.$emoji.'"][position()=1]';
             $result = $mapping->xpath($xpath_query);
             if (count($result) > 0) {
                 foreach ($result as $e) {
-                    $targetStr = $mode === self::MODE_BINARY ? 'U+'.$emoji: '&#x'.$emoji;
+                    $targetStr = ($mode === self::MODE_BINARY)? 'U+'.$emoji: '&#x'.$emoji;
                     $str = str_replace($targetStr, $this->getEmoji($e, $device), $str);
                 }
             }
@@ -72,7 +72,7 @@ class EmojiConverter
     /**
      * 携帯キャリアを検出する
      * 
-     * @param string $userAgent ユーザエージェント
+     * @param string $userAgent ユーザーエージェント
      * @return string 携帯キャリア
      */
     public function detectDevice($userAgent = null): string
@@ -99,8 +99,8 @@ class EmojiConverter
      * 絵文字コードを返却
      * 
      * @param SimpleXMLElement $e
-     * @param  string $device
-     * @return string
+     * @param  string $device デバイス区分
+     * @return string 絵文字コード
      */
     private function getEmoji(SimpleXMLElement $e, string $device): string
     {
@@ -108,13 +108,21 @@ class EmojiConverter
             return '&#x'.(string)$e->attributes()->$device.';';
         }
 
-        //PCデバイスのときはUnicode絵文字バイナリを返却
+        // PCデバイスのときはUnicode絵文字バイナリを返却
         $bin = '';
         $codePoints = explode("+", (string)$e->attributes()->unicode);
         foreach ($codePoints as $code) {
+
+            if (strlen($code) === 0) {
+                continue;
+            }
+
+            // 合成時の場合、バリエーションセレクター-16で結合
             if (strlen($bin) > 0) {
                 $bin .= hex2bin(str_repeat('0', 8 - strlen("FE0F"))."FE0F");
             }
+
+            $code = str_replace('*', '', $code);
             $bin .= hex2bin(str_repeat('0', 8 - strlen($code)).$code);
         }
 
