@@ -1,0 +1,24 @@
+{
+    "name": "gayou/emoji-converter",
+    "description": "emoji-converter is a library that converts emojis with characters best suited for your device.",
+    "type": "library",
+    "license": "",
+    "authors": [
+        {
+            "name": "gayou",
+            "email": "gayou.ura@gmail.com"
+        }
+    ],
+    "autoload": {
+        "classmap": [
+            "src/"
+        ],
+        "psr-4": {
+            "Gayou\\EmojiConverter\\": "src/"
+        }
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.5",
+        "phpunit/phpunit": "^9.5"
+    }
+}
