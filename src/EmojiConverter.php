@@ -5,7 +5,7 @@ use SimpleXMLElement;
 /**
  * 絵文字変換クラス
  *
- * 携帯絵文字を各キャリア向けの絵文字に変換する
+ * i絵文字を各キャリア向けの絵文字に変換する
  *
  * @author gayou <admin@gayou.info>
  */
@@ -30,11 +30,11 @@ class EmojiConverter
     
     
     /**
-     * 携帯絵文字をデバイスに最適な文字に変換
+     * i絵文字をデバイスに最適な文字に変換
      * 
      * @param string $str 変換対象の文字列
      * @param string $userAgent ユーザーエージェント
-     * @
+     * @return string 絵文字変換後のテキスト
      */
     public function convert($str, $mode = self::MODE_BINARY, $userAgent = null): string
     {
@@ -52,7 +52,7 @@ class EmojiConverter
         $pattern = ($mode === self::MODE_BINARY)? "/U\+([A-F0-9]{4})/": "/&#x([A-F0-9]{4});/";
         preg_match_all($pattern, $str, $matches);
                 
-        // キャリア絵文字変換
+        // 各キャリアの絵文字に変換
         $mapping = $this->mapping; 
         foreach ($matches[1] as $emoji) {
             $xpath_query = '//e[@docomo="'.$emoji.'"][position()=1]';
@@ -104,11 +104,12 @@ class EmojiConverter
      */
     private function getEmoji(SimpleXMLElement $e, string $device): string
     {
+        // 携帯キャリアの場合
         if ($device !== self::NONE) {
             return '&#x'.(string)$e->attributes()->$device.';';
         }
 
-        // PCデバイスのときはUnicode絵文字バイナリを返却
+        // 携帯キャリア以外の場合は、Unicode絵文字バイナリを返却
         $bin = '';
         $codePoints = explode("+", (string)$e->attributes()->unicode);
         foreach ($codePoints as $code) {
@@ -117,7 +118,7 @@ class EmojiConverter
                 continue;
             }
 
-            // 合成時の場合、バリエーションセレクター-16で結合
+            // 合成文字の場合はバリエーションセレクター-16で結合
             if (strlen($bin) > 0) {
                 $bin .= hex2bin(str_repeat('0', 8 - strlen("FE0F"))."FE0F");
             }
